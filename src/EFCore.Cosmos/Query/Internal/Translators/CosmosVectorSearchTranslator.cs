@@ -87,7 +87,8 @@ public class CosmosVectorSearchTranslator(ISqlExpressionFactory sqlExpressionFac
                 sqlExpressionFactory.ApplyTypeMapping(arguments[1], vectorMapping),
                 sqlExpressionFactory.ApplyTypeMapping(arguments[2], vectorMapping),
                 bruteForce,
-                sqlExpressionFactory.Constant(vectorType, (CosmosTypeMapping)typeMappingSource.FindMapping(typeof(CosmosVectorType))!)
+                sqlExpressionFactory.JsonLiteral(
+                    $"{{'distanceFunction':'{vectorType.DistanceFunction.ToString().ToLower()}', 'dataType':'{vectorType.DataType?.ToString().ToLower()}'}}")
             ],
             typeof(double));
     }

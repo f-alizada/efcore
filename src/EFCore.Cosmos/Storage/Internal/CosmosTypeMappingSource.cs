@@ -82,11 +82,6 @@ public class CosmosTypeMappingSource : TypeMappingSource
     private CoreTypeMapping? FindPrimitiveMapping(in TypeMappingInfo mappingInfo)
     {
         var clrType = mappingInfo.ClrType!;
-        if (clrType.IsAssignableTo(typeof(CosmosVectorType)))
-        {
-            return new CosmosVectorDistanceCalculationTypeMapping();
-        }
-
         if ((clrType.IsValueType
                 && clrType != typeof(Guid)
                 && !clrType.IsEnum)
