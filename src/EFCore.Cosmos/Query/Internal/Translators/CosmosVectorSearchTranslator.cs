@@ -48,14 +48,14 @@ public class CosmosVectorSearchTranslator(ISqlExpressionFactory sqlExpressionFac
             if (arguments[3] is not SqlConstantExpression { Value: bool })
             {
                 throw new InvalidOperationException(
-                    CosmosStrings.ArgumentNotConstant("useBruteForce", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
+                    CoreStrings.ArgumentNotConstant("useBruteForce", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
             }
 
             bruteForce = (SqlConstantExpression)arguments[3];
         }
         else
         {
-            bruteForce = sqlExpressionFactory.Constant(false, (CosmosTypeMapping)typeMappingSource.FindMapping(typeof(bool))!);
+            bruteForce = sqlExpressionFactory.Constant(false);
         }
 
         var vectorType = vectorMapping.VectorType;
@@ -64,14 +64,14 @@ public class CosmosVectorSearchTranslator(ISqlExpressionFactory sqlExpressionFac
             if (arguments[4] is not SqlConstantExpression { Value: DistanceFunction distanceFunction })
             {
                 throw new InvalidOperationException(
-                    CosmosStrings.ArgumentNotConstant("distanceFunction", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
+                    CoreStrings.ArgumentNotConstant("distanceFunction", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
             }
             vectorType = vectorType with { DistanceFunction = distanceFunction };
 
             if (arguments[5] is not SqlConstantExpression { Value: VectorDataType vectorDataType })
             {
                 throw new InvalidOperationException(
-                    CosmosStrings.ArgumentNotConstant("dataType", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
+                    CoreStrings.ArgumentNotConstant("dataType", nameof(CosmosDbFunctionsExtensions.VectorDistance)));
             }
             vectorType = vectorType with { DataType = vectorDataType };
         }
@@ -87,9 +87,10 @@ public class CosmosVectorSearchTranslator(ISqlExpressionFactory sqlExpressionFac
                 sqlExpressionFactory.ApplyTypeMapping(arguments[1], vectorMapping),
                 sqlExpressionFactory.ApplyTypeMapping(arguments[2], vectorMapping),
                 bruteForce,
-                sqlExpressionFactory.JsonLiteral(
+                sqlExpressionFactory.Fragment(
                     $"{{'distanceFunction':'{vectorType.DistanceFunction.ToString().ToLower()}', 'dataType':'{vectorType.DataType?.ToString().ToLower()}'}}")
             ],
-            typeof(double));
+            typeof(double),
+            typeMappingSource.FindMapping(typeof(double))!);
     }
 }

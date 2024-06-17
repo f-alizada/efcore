@@ -460,7 +460,7 @@ public class CosmosModelValidator : ModelValidator
     {
         foreach (var entityType in model.GetEntityTypes())
         {
-            foreach (var index in entityType.GetIndexes())
+            foreach (var index in entityType.GetDeclaredIndexes())
             {
                 if (index.FindAnnotation(CosmosAnnotationNames.VectorIndexType) != null)
                 {
@@ -479,6 +479,32 @@ public class CosmosModelValidator : ModelValidator
                                 entityType.DisplayName(),
                                 index.Properties[0].Name));
                     }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
+    ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
+    ///     any release. You should only use it directly in your code with extreme caution and knowing that
+    ///     doing so can result in application failures when updating to a new Entity Framework Core release.
+    /// </summary>
+    protected override void ValidatePropertyMapping(
+        IModel model,
+        IDiagnosticsLogger<DbLoggerCategory.Model.Validation> logger)
+    {
+        base.ValidatePropertyMapping(model, logger);
+
+        foreach (var entityType in model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetDeclaredProperties())
+            {
+                var cosmosVectorType = property.GetVectorType();
+                if (cosmosVectorType is { DataType: null })
+                {
+                    // Will throw if the data type is not set and cannot be inferred.
+                    CosmosVectorType.CreateDefaultVectorDataType(property.GetValueConverter()?.ProviderClrType ?? property.ClrType);
                 }
             }
         }

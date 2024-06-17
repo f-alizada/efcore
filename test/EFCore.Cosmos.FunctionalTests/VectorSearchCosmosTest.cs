@@ -1,25 +1,24 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore.Cosmos.Extensions;
 using Microsoft.EntityFrameworkCore.Cosmos.Internal;
 
 namespace Microsoft.EntityFrameworkCore;
 
-public class VectorSearchCosmosTest : IClassFixture<VectorSearchCosmosTest.ReadItemFixture>
+public class VectorSearchCosmosTest : IClassFixture<VectorSearchCosmosTest.VectorSearchFixture>
 {
-    public VectorSearchCosmosTest(ReadItemFixture fixture, ITestOutputHelper testOutputHelper)
+    public VectorSearchCosmosTest(VectorSearchFixture fixture, ITestOutputHelper testOutputHelper)
     {
         Fixture = fixture;
-        this.testOutputHelper = testOutputHelper;
+        _testOutputHelper = testOutputHelper;
         fixture.TestSqlLoggerFactory.Clear();
     }
 
-    protected ReadItemFixture Fixture { get; }
+    protected VectorSearchFixture Fixture { get; }
 
-    private readonly ITestOutputHelper testOutputHelper;
+    private readonly ITestOutputHelper _testOutputHelper;
 
     [ConditionalFact]
     public virtual async Task Query_for_vector_distance_sbyte_array()
@@ -57,7 +56,7 @@ WHERE (c["Discriminator"] = "Book")
                 .Select(e => EF.Functions.VectorDistance(e.ByteArray, inputVector))
                 .ToListAsync())).Message;
 
-        testOutputHelper.WriteLine(message);
+        _testOutputHelper.WriteLine(message);
 
         AssertSql(
             """
@@ -98,6 +97,7 @@ WHERE (c["Discriminator"] = "Book")
     public virtual async Task Query_for_vector_distance_int_list()
     {
         await using var context = CreateContext();
+
         var inputVector = new List<int>
         {
             2,
@@ -118,7 +118,7 @@ WHERE (c["Discriminator"] = "Book")
                 .Select(e => EF.Functions.VectorDistance(e.IntList, inputVector))
                 .ToListAsync())).Message;
 
-        testOutputHelper.WriteLine(message);
+        _testOutputHelper.WriteLine(message);
 
         // Assert.Equal(3, booksFromStore.Count);
         // Assert.All(booksFromStore, s => Assert.NotEqual(0.0, s));
@@ -334,7 +334,6 @@ WHERE (c["Discriminator"] = "Book")
                     .ToListAsync())).Message);
     }
 
-
     [ConditionalFact]
     public virtual async Task VectorDistance_throws_when_used_with_non_const_args()
     {
@@ -352,7 +351,7 @@ WHERE (c["Discriminator"] = "Book")
         };
 
         Assert.Equal(
-            CosmosStrings.ArgumentNotConstant("useBruteForce", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
+            CoreStrings.ArgumentNotConstant("useBruteForce", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
             (await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await context
                     .Set<Book>()
@@ -360,7 +359,7 @@ WHERE (c["Discriminator"] = "Book")
                     .ToListAsync())).Message);
 
         Assert.Equal(
-            CosmosStrings.ArgumentNotConstant("distanceFunction", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
+            CoreStrings.ArgumentNotConstant("distanceFunction", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
             (await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await context
                     .Set<Book>()
@@ -369,7 +368,7 @@ WHERE (c["Discriminator"] = "Book")
                     .ToListAsync())).Message);
 
         Assert.Equal(
-            CosmosStrings.ArgumentNotConstant("dataType", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
+            CoreStrings.ArgumentNotConstant("dataType", nameof(CosmosDbFunctionsExtensions.VectorDistance)),
             (await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await context
                     .Set<Book>()
@@ -430,7 +429,7 @@ WHERE (c["Discriminator"] = "Book")
     private void AssertSql(params string[] expected)
         => Fixture.TestSqlLoggerFactory.AssertBaseline(expected);
 
-    public class ReadItemFixture : SharedStoreFixtureBase<PoolableDbContext>
+    public class VectorSearchFixture : SharedStoreFixtureBase<PoolableDbContext>
     {
         protected override string StoreName
             => "VectorSearchTest";

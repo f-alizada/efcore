@@ -120,8 +120,8 @@
   <data name="AnalyticalTTLMismatch" xml:space="preserve">
     <value>The time to live for analytical store was configured to '{ttl1}' on '{entityType1}', but on '{entityType2}' it was configured to '{ttl2}'. All entity types mapped to the same container '{container}' must be configured with the same time to live for analytical store.</value>
   </data>
-  <data name="ArgumentNotConstant" xml:space="preserve">
-    <value>The '{parameter}' value passed to '{methodName}' must be a constant.</value>
+  <data name="BadVectorDataType" xml:space="preserve">
+    <value>The type '{clrType}' is being used as a vector, but the vector data type cannot be inferred. Either use a collection of a supported type such as 'byte', 'sbyte', 'float', or 'Half', or specify the data type explicitly.</value>
   </data>
   <data name="CanConnectNotSupported" xml:space="preserve">
     <value>The Cosmos database does not support 'CanConnect' or 'CanConnectAsync'.</value>
@@ -319,7 +319,7 @@
     <value>A vector index is defined for `{entityType}.{property}`, but this property has not been configured as a vector. Use 'IsVector()' in 'OnModelCreating' to configure the property as a vector.</value>
   </data>
   <data name="VectorSearchRequiresVector" xml:space="preserve">
-    <value>The 'VectorDistance' function can only be used with a property mapped as a vectors. Use 'IsVector()' in 'OnModelCreating' to configure the property as a vector.</value>
+    <value>The 'VectorDistance' function can only be used with a property mapped as a vector. Use 'IsVector()' in 'OnModelCreating' to configure the property as a vector.</value>
   </data>
   <data name="VisitChildrenMustBeOverridden" xml:space="preserve">
     <value>'VisitChildren' must be overridden in the class deriving from 'SqlExpression'.</value>

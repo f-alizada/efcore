@@ -440,6 +440,26 @@ public class CosmosModelValidatorTest : ModelValidatorTestBase
         VerifyError(CosmosStrings.VectorIndexOnNonVector(nameof(Customer), "Name"), modelBuilder);
     }
 
+
+    [ConditionalFact]
+    public virtual void Detects_vector_property_with_unknown_data_type()
+    {
+        var modelBuilder = CreateConventionModelBuilder();
+        modelBuilder.Entity<NonVector>(
+            b =>
+            {
+                b.Property(e => e.Vector).IsVector(DistanceFunction.Cosine, dimensions: 10);
+            });
+
+        VerifyError(CosmosStrings.BadVectorDataType("double[]"), modelBuilder);
+    }
+
+    private class NonVector
+    {
+        public Guid Id { get; set; }
+        public double[] Vector { get; set; }
+    }
+
     protected override TestHelpers TestHelpers
         => CosmosTestHelpers.Instance;
 }

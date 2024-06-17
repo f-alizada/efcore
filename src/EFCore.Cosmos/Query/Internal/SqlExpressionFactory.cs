@@ -3,7 +3,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Cosmos.Internal;
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
@@ -17,7 +16,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel model)
     : ISqlExpressionFactory
 {
-    private readonly CosmosTypeMapping _boolTypeMapping = (CosmosTypeMapping)typeMappingSource.FindMapping(typeof(bool), model)!;
+    private readonly CoreTypeMapping _boolTypeMapping = typeMappingSource.FindMapping(typeof(bool), model)!;
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -29,7 +28,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     public virtual SqlExpression? ApplyDefaultTypeMapping(SqlExpression? sqlExpression)
         => sqlExpression is not { TypeMapping: null }
             ? sqlExpression
-            : ApplyTypeMapping(sqlExpression, (CosmosTypeMapping?)typeMappingSource.FindMapping(sqlExpression.Type, model));
+            : ApplyTypeMapping(sqlExpression, typeMappingSource.FindMapping(sqlExpression.Type, model));
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -38,7 +37,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
     [return: NotNullIfNotNull(nameof(sqlExpression))]
-    public virtual SqlExpression? ApplyTypeMapping(SqlExpression? sqlExpression, CosmosTypeMapping? typeMapping)
+    public virtual SqlExpression? ApplyTypeMapping(SqlExpression? sqlExpression, CoreTypeMapping? typeMapping)
         => sqlExpression switch
         {
             null or { TypeMapping: not null } => sqlExpression,
@@ -56,7 +55,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
 
     private SqlExpression ApplyTypeMappingOnSqlConditional(
         SqlConditionalExpression sqlConditionalExpression,
-        CosmosTypeMapping? typeMapping)
+        CoreTypeMapping? typeMapping)
         => sqlConditionalExpression.Update(
             sqlConditionalExpression.Test,
             ApplyTypeMapping(sqlConditionalExpression.IfTrue, typeMapping),
@@ -64,11 +63,11 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
 
     private SqlExpression ApplyTypeMappingOnSqlUnary(
         SqlUnaryExpression sqlUnaryExpression,
-        CosmosTypeMapping? typeMapping)
+        CoreTypeMapping? typeMapping)
     {
         SqlExpression operand;
         Type resultType;
-        CosmosTypeMapping? resultTypeMapping;
+        CoreTypeMapping? resultTypeMapping;
         switch (sqlUnaryExpression.OperatorType)
         {
             case ExpressionType.Equal:
@@ -108,14 +107,14 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
 
     private SqlExpression ApplyTypeMappingOnSqlBinary(
         SqlBinaryExpression sqlBinaryExpression,
-        CosmosTypeMapping? typeMapping)
+        CoreTypeMapping? typeMapping)
     {
         var left = sqlBinaryExpression.Left;
         var right = sqlBinaryExpression.Right;
 
         Type resultType;
-        CosmosTypeMapping? resultTypeMapping;
-        CosmosTypeMapping? inferredTypeMapping;
+        CoreTypeMapping? resultTypeMapping;
+        CoreTypeMapping? inferredTypeMapping;
         switch (sqlBinaryExpression.OperatorType)
         {
             case ExpressionType.Equal:
@@ -128,8 +127,8 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
                 inferredTypeMapping = ExpressionExtensions.InferTypeMapping(left, right)
                     // We avoid object here since the result does not get typeMapping from outside.
                     ?? (left.Type != typeof(object)
-                        ? (CosmosTypeMapping?)typeMappingSource.FindMapping(left.Type, model)
-                        : (CosmosTypeMapping?)typeMappingSource.FindMapping(right.Type, model));
+                        ? typeMappingSource.FindMapping(left.Type, model)
+                        : typeMappingSource.FindMapping(right.Type, model));
                 resultType = typeof(bool);
                 resultTypeMapping = _boolTypeMapping;
                 break;
@@ -166,7 +165,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
                 // TODO: This infers based on the CLR type; need to properly infer based on the element type mapping
                 // TODO: being applied here (e.g. WHERE @p[1] = c.PropertyWithValueConverter)
                 var arrayTypeMapping = left.TypeMapping
-                    ?? (typeMapping is null ? null : (CosmosTypeMapping?)typeMappingSource.FindMapping(typeMapping.ClrType.MakeArrayType()));
+                    ?? (typeMapping is null ? null : typeMappingSource.FindMapping(typeMapping.ClrType.MakeArrayType()));
                 return new SqlBinaryExpression(
                     ExpressionType.ArrayIndex,
                     ApplyTypeMapping(left, arrayTypeMapping),
@@ -193,7 +192,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     {
         var missingTypeMappingInValues = false;
 
-        CosmosTypeMapping? valuesTypeMapping = null;
+        CoreTypeMapping? valuesTypeMapping = null;
         switch (inExpression)
         {
             case { ValuesParameter: SqlParameterExpression parameter }:
@@ -222,7 +221,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
 
         var item = ApplyTypeMapping(
             inExpression.Item,
-            valuesTypeMapping ?? (CosmosTypeMapping?)typeMappingSource.FindMapping(inExpression.Item.Type, model));
+            valuesTypeMapping ?? typeMappingSource.FindMapping(inExpression.Item.Type, model));
 
         switch (inExpression)
         {
@@ -273,8 +272,8 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
                 ? unary.Operand.TypeMapping
                 : null)
             // If we couldn't find a type mapping on the item, try inferring it from the array
-            ?? (CosmosTypeMapping?)arrayMapping?.ElementTypeMapping
-            ?? (CosmosTypeMapping?)typeMappingSource.FindMapping(itemExpression.Type, model);
+            ?? arrayMapping?.ElementTypeMapping
+            ?? typeMappingSource.FindMapping(itemExpression.Type, model);
 
         if (itemMapping is null)
         {
@@ -298,7 +297,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
                     $"Can't construct generic primitive collection type for array type '{arrayExpression.Type}'")
             };
 
-            arrayMapping = (CosmosTypeMapping?)typeMappingSource.FindMapping(arrayClrType, model, itemMapping.ElementTypeMapping);
+            arrayMapping = typeMappingSource.FindMapping(arrayClrType, model, itemMapping.ElementTypeMapping);
 
             if (arrayMapping is null)
             {
@@ -319,7 +318,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
         ExpressionType operatorType,
         SqlExpression left,
         SqlExpression right,
-        CosmosTypeMapping? typeMapping)
+        CoreTypeMapping? typeMapping)
     {
         if (!SqlBinaryExpression.IsValidOperator(operatorType))
         {
@@ -432,7 +431,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Add(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Add(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Add, left, right, typeMapping)!;
 
     /// <summary>
@@ -441,7 +440,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Subtract(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Subtract(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Subtract, left, right, typeMapping)!;
 
     /// <summary>
@@ -450,7 +449,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Multiply(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Multiply(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Multiply, left, right, typeMapping)!;
 
     /// <summary>
@@ -459,7 +458,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Divide(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Divide(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Divide, left, right, typeMapping)!;
 
     /// <summary>
@@ -468,7 +467,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Modulo(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Modulo(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Modulo, left, right, typeMapping)!;
 
     /// <summary>
@@ -477,7 +476,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression And(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression And(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.And, left, right, typeMapping)!;
 
     /// <summary>
@@ -486,14 +485,14 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression Or(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression Or(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Or, left, right, typeMapping)!;
 
     private SqlUnaryExpression? MakeUnary(
         ExpressionType operatorType,
         SqlExpression operand,
         Type type,
-        CosmosTypeMapping? typeMapping = null)
+        CoreTypeMapping? typeMapping = null)
         => SqlUnaryExpression.IsValidOperator(operatorType)
             ? (SqlUnaryExpression)ApplyTypeMapping(new SqlUnaryExpression(operatorType, operand, type, null), typeMapping)
             : null;
@@ -504,7 +503,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlExpression CoalesceUndefined(SqlExpression left, SqlExpression right, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlExpression CoalesceUndefined(SqlExpression left, SqlExpression right, CoreTypeMapping? typeMapping = null)
         => MakeBinary(ExpressionType.Coalesce, left, right, typeMapping)!;
 
     /// <summary>
@@ -531,7 +530,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlBinaryExpression ArrayIndex(SqlExpression left, SqlExpression right, Type type, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlBinaryExpression ArrayIndex(SqlExpression left, SqlExpression right, Type type, CoreTypeMapping? typeMapping = null)
         => new(ExpressionType.ArrayIndex, left, right, type, typeMapping)!;
 
     /// <summary>
@@ -540,7 +539,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlUnaryExpression Convert(SqlExpression operand, Type type, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlUnaryExpression Convert(SqlExpression operand, Type type, CoreTypeMapping? typeMapping = null)
         => MakeUnary(ExpressionType.Convert, operand, type, typeMapping)!;
 
     /// <summary>
@@ -571,7 +570,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
         string functionName,
         IEnumerable<SqlExpression> arguments,
         Type returnType,
-        CosmosTypeMapping? typeMapping = null)
+        CoreTypeMapping? typeMapping = null)
     {
         var typeMappedArguments = new List<SqlExpression>();
 
@@ -627,7 +626,7 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual SqlConstantExpression Constant(object? value, CosmosTypeMapping? typeMapping = null)
+    public virtual SqlConstantExpression Constant(object? value, CoreTypeMapping? typeMapping = null)
         => new(Expression.Constant(value), typeMapping);
 
     /// <summary>
@@ -636,8 +635,8 @@ public class SqlExpressionFactory(ITypeMappingSource typeMappingSource, IModel m
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public virtual JsonFragmentExpression JsonLiteral(string json)
-        => new(json);
+    public virtual FragmentExpression Fragment(string fragment)
+        => new(fragment);
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to

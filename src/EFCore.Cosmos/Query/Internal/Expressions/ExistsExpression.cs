@@ -2,9 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 // ReSharper disable once CheckNamespace
-
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
-
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 
 /// <summary>
@@ -31,7 +28,7 @@ public class ExistsExpression : SqlExpression
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public ExistsExpression(SelectExpression subquery, CosmosTypeMapping? typeMapping)
+    public ExistsExpression(SelectExpression subquery, CoreTypeMapping? typeMapping)
         : base(typeof(bool), typeMapping)
     {
         Subquery = subquery;

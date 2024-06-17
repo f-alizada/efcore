@@ -49,13 +49,10 @@ public class CosmosTypeMappingSource : TypeMappingSource
         // the property does not exist. However, since the Cosmos provider doesn't have Migrations, it should be okay to use the property
         // directly.
         var mapping = (CosmosTypeMapping?)base.FindMapping(property);
-        if (mapping != null)
+        if (mapping is not null
+            && property.FindAnnotation(CosmosAnnotationNames.VectorType)?.Value is CosmosVectorType vectorType)
         {
-            var vectorType = (CosmosVectorType?)property.FindAnnotation(CosmosAnnotationNames.VectorType)?.Value;
-            if (vectorType != null)
-            {
-                mapping = new CosmosVectorTypeMapping(mapping, vectorType);
-            }
+            mapping = new CosmosVectorTypeMapping(mapping, vectorType);
         }
 
         return mapping;

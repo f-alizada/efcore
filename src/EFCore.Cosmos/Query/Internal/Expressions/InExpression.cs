@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.EntityFrameworkCore.Cosmos.Internal;
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
@@ -24,7 +23,7 @@ public class InExpression : SqlExpression
     public InExpression(
         SqlExpression item,
         IReadOnlyList<SqlExpression> values,
-        CosmosTypeMapping typeMapping)
+        CoreTypeMapping typeMapping)
         : this(item, values, valuesParameter: null, typeMapping)
     {
     }
@@ -38,7 +37,7 @@ public class InExpression : SqlExpression
     public InExpression(
         SqlExpression item,
         SqlParameterExpression valuesParameter,
-        CosmosTypeMapping typeMapping)
+        CoreTypeMapping typeMapping)
         : this(item, values: null, valuesParameter, typeMapping)
     {
     }
@@ -47,7 +46,7 @@ public class InExpression : SqlExpression
         SqlExpression item,
         IReadOnlyList<SqlExpression>? values,
         SqlParameterExpression? valuesParameter,
-        CosmosTypeMapping? typeMapping)
+        CoreTypeMapping? typeMapping)
         : base(typeof(bool), typeMapping)
     {
         Item = item;
@@ -120,7 +119,7 @@ public class InExpression : SqlExpression
     /// </summary>
     /// <param name="typeMapping">A relational type mapping to apply.</param>
     /// <returns>A new expression which has supplied type mapping.</returns>
-    public virtual InExpression ApplyTypeMapping(CosmosTypeMapping? typeMapping)
+    public virtual InExpression ApplyTypeMapping(CoreTypeMapping? typeMapping)
         => new(Item, Values, ValuesParameter, typeMapping);
 
     /// <summary>

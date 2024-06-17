@@ -1,6 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using Microsoft.EntityFrameworkCore.Cosmos.Internal;
+
 namespace Microsoft.EntityFrameworkCore.Cosmos.Metadata.Internal;
 
 /// <summary>
@@ -26,6 +28,8 @@ public sealed record class CosmosVectorType(DistanceFunction DistanceFunction, u
                 ? VectorDataType.Uint8
                 : elementType == typeof(Half)
                     ? VectorDataType.Float16
-                    : VectorDataType.Float32;
+                    : elementType == typeof(float)
+                        ? VectorDataType.Float32
+                        : throw new InvalidOperationException(CosmosStrings.BadVectorDataType(clrType.ShortDisplayName()));
     }
 }

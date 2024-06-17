@@ -3,8 +3,6 @@
 
 using Microsoft.EntityFrameworkCore.Cosmos.Internal;
 using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 
@@ -352,9 +350,9 @@ public class CosmosQuerySqlGenerator(ITypeMappingSource typeMappingSource) : Sql
                 for (var i = 0; i < constantValues.Length; i++)
                 {
                     var value = constantValues[i];
-                    var typeMapping = (CosmosTypeMapping?)typeMappingSource.FindMapping(value.GetType());
+                    var typeMapping = typeMappingSource.FindMapping(value.GetType());
                     Check.DebugAssert(typeMapping is not null, "Could not find type mapping for FromSql parameter");
-                    substitutions[i] = typeMapping.GenerateConstant(value);
+                    substitutions[i] = ((CosmosTypeMapping)typeMapping).GenerateConstant(value);
                 }
 
                 break;
@@ -540,7 +538,7 @@ public class CosmosQuerySqlGenerator(ITypeMappingSource typeMappingSource) : Sql
     protected override Expression VisitSqlConstant(SqlConstantExpression sqlConstantExpression)
     {
         Check.DebugAssert(sqlConstantExpression.TypeMapping is not null, "SqlConstantExpression without a type mapping");
-        _sqlBuilder.Append(sqlConstantExpression.TypeMapping.GenerateConstant(sqlConstantExpression.Value));
+        _sqlBuilder.Append(((CosmosTypeMapping)sqlConstantExpression.TypeMapping).GenerateConstant(sqlConstantExpression.Value));
 
         return sqlConstantExpression;
     }
@@ -551,11 +549,11 @@ public class CosmosQuerySqlGenerator(ITypeMappingSource typeMappingSource) : Sql
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    protected override Expression VisitJsonFragment(JsonFragmentExpression jsonFragmentExpression)
+    protected override Expression VisitFragment(FragmentExpression fragmentExpression)
     {
-        _sqlBuilder.Append(jsonFragmentExpression.Json);
+        _sqlBuilder.Append(fragmentExpression.Fragment);
 
-        return jsonFragmentExpression;
+        return fragmentExpression;
     }
 
     /// <summary>
@@ -590,7 +588,7 @@ public class CosmosQuerySqlGenerator(ITypeMappingSource typeMappingSource) : Sql
         if (_sqlParameters.All(sp => sp.Name != parameterName))
         {
             Check.DebugAssert(sqlParameterExpression.TypeMapping is not null, "SqlParameterExpression without a type mapping");
-            var jToken = sqlParameterExpression.TypeMapping.GenerateJToken(_parameterValues[sqlParameterExpression.Name]);
+            var jToken = ((CosmosTypeMapping)sqlParameterExpression.TypeMapping).GenerateJToken(_parameterValues[sqlParameterExpression.Name]);
             _sqlParameters.Add(new SqlParameter(parameterName, jToken));
         }
 

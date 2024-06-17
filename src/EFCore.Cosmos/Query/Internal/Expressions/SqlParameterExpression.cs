@@ -1,8 +1,6 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
-
 // ReSharper disable once CheckNamespace
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 
@@ -23,7 +21,7 @@ public sealed class SqlParameterExpression : SqlExpression
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public SqlParameterExpression(ParameterExpression parameterExpression, CosmosTypeMapping? typeMapping)
+    public SqlParameterExpression(ParameterExpression parameterExpression, CoreTypeMapping? typeMapping)
         : base(parameterExpression.Type, typeMapping)
     {
         Check.DebugAssert(parameterExpression.Name != null, "Parameter must have name.");
@@ -47,7 +45,7 @@ public sealed class SqlParameterExpression : SqlExpression
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public SqlExpression ApplyTypeMapping(CosmosTypeMapping? typeMapping)
+    public SqlExpression ApplyTypeMapping(CoreTypeMapping? typeMapping)
         => new SqlParameterExpression(_parameterExpression, typeMapping ?? TypeMapping);
 
     /// <summary>

@@ -32,12 +32,12 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Internal
                 ttl1, entityType1, entityType2, ttl2, container);
 
         /// <summary>
-        ///     The '{parameter}' value passed to '{methodName}' must be a constant.
+        ///     The type '{clrType}' is being used as a vector, but the vector data type cannot be inferred. Either use a collection of a supported type such as 'byte', 'sbyte', 'float', or 'Half', or specify the data type explicitly.
         /// </summary>
-        public static string ArgumentNotConstant(object? parameter, object? methodName)
+        public static string BadVectorDataType(object? clrType)
             => string.Format(
-                GetString("ArgumentNotConstant", nameof(parameter), nameof(methodName)),
-                parameter, methodName);
+                GetString("BadVectorDataType", nameof(clrType)),
+                clrType);
 
         /// <summary>
         ///     The Cosmos database does not support 'CanConnect' or 'CanConnectAsync'.
@@ -429,7 +429,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Internal
 
 
         /// <summary>
-        ///     The 'VectorDistance' function can only be used with a property mapped as a vectors. Use 'IsVector()' in 'OnModelCreating' to configure the property as a vector.
+        ///     The 'VectorDistance' function can only be used with a property mapped as a vector. Use 'IsVector()' in 'OnModelCreating' to configure the property as a vector.
         /// </summary>
         public static string VectorSearchRequiresVector
             => GetString("VectorSearchRequiresVector");

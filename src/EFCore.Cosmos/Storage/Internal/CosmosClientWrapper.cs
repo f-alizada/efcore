@@ -213,6 +213,8 @@ public class CosmosClientWrapper : ICosmosClientWrapper
             if (vectorIndexType.HasValue)
             {
                 // Model validation will ensure there is only one property.
+                Check.DebugAssert(index.Properties.Count == 1, "Vector index must have one property.");
+
                 vectorIndexes.Add(
                     new VectorIndexPath { Path = "/" + index.Properties[0].GetJsonPropertyName(), Type = vectorIndexType.Value });
             }

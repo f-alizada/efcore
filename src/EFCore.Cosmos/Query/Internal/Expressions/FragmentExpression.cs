@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 
 /// <summary>
-///     An expression that represents a JSON fragment.
+///     An expression that represents a fragment that will be inserted verbatim into the query.
 /// </summary>
 /// <remarks>
 ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -15,12 +15,12 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 ///     any release. You should only use it directly in your code with extreme caution and knowing that
 ///     doing so can result in application failures when updating to a new Entity Framework Core release.
 /// </remarks>
-public class JsonFragmentExpression(string json) : SqlExpression(typeof(string), CosmosTypeMapping.Default)
+public class FragmentExpression(string fragment) : SqlExpression(typeof(string), CosmosTypeMapping.Default)
 {
     /// <summary>
-    ///     The JSON string token to print in SQL tree.
+    ///     The fragment.
     /// </summary>
-    public virtual string Json { get; } = json;
+    public virtual string Fragment { get; } = fragment;
 
     /// <inheritdoc />
     protected override Expression VisitChildren(ExpressionVisitor visitor)
@@ -28,7 +28,7 @@ public class JsonFragmentExpression(string json) : SqlExpression(typeof(string),
 
     /// <inheritdoc />
     protected override void Print(ExpressionPrinter expressionPrinter)
-        => expressionPrinter.Append(Json);
+        => expressionPrinter.Append(Fragment);
 
     /// <summary>
     ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -36,18 +36,18 @@ public class JsonFragmentExpression(string json) : SqlExpression(typeof(string),
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    protected virtual bool Equals(JsonFragmentExpression other)
+    protected virtual bool Equals(FragmentExpression other)
         => base.Equals(other)
-            && Json == other.Json;
+            && Fragment == other.Fragment;
 
     /// <inheritdoc />
     public override bool Equals(object? obj)
         => !ReferenceEquals(null, obj)
             && (ReferenceEquals(this, obj)
                 || obj.GetType() == GetType()
-                && Equals((JsonFragmentExpression)obj));
+                && Equals((FragmentExpression)obj));
 
     /// <inheritdoc />
     public override int GetHashCode()
-        => HashCode.Combine(base.GetHashCode(), Json);
+        => HashCode.Combine(base.GetHashCode(), Fragment);
 }

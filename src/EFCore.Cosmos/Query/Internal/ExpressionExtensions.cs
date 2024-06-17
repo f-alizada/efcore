@@ -1,8 +1,6 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
-
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
 
 /// <summary>
@@ -19,7 +17,7 @@ public static class ExpressionExtensions
     ///     any release. You should only use it directly in your code with extreme caution and knowing that
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
-    public static CosmosTypeMapping? InferTypeMapping(params Expression[] expressions)
+    public static CoreTypeMapping? InferTypeMapping(params Expression[] expressions)
     {
         for (var i = 0; i < expressions.Length; i++)
         {

@@ -22,6 +22,9 @@ public class CosmosVectorTypeMapping : CosmosTypeMapping
     ///     doing so can result in application failures when updating to a new Entity Framework Core release.
     /// </summary>
     public static new CosmosVectorTypeMapping Default { get; }
+        // Note that this default is not valid because dimensions cannot be zero. But since there is no reasonable
+        // default dimensions size for a vector type, this is intentionally not valid rather than just being wrong.
+        // The fundamental problem here is that type mappings are "required" to have some default now.
         = new(typeof(byte[]), new CosmosVectorType(DistanceFunction.Cosine, 0, VectorDataType.Int8));
 
     /// <summary>

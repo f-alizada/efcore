@@ -3,7 +3,6 @@
 
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Cosmos.Internal;
-using Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal;
@@ -112,7 +111,7 @@ public class SelectExpression : Expression, IPrintableExpression
     public static SelectExpression CreateForPrimitiveCollection(
         SourceExpression source,
         Type elementClrType,
-        CosmosTypeMapping elementTypeMapping)
+        CoreTypeMapping elementTypeMapping)
         => new()
         {
             _sources = { source },
